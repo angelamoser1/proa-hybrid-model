@@ -1,3 +1,11 @@
+# proa model stuff
+models/
+output/
+*.h5
+
+# Mac display settings file
+.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
