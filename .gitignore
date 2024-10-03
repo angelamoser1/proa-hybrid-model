@@ -1,6 +1,8 @@
 # proa model stuff
 models/
 output/
+results_fit_parameters/
+diskcache_fit_parameters/
 *.h5
 
 # Mac display settings file

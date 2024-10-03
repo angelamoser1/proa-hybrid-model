@@ -53,8 +53,12 @@ def format_multicomponent(sim_solutions):
     
 
 def make_results_folder(run_type, output_folder_path):
+    path = os.path.join(output_folder_path, 'outputs')
+    # Create the output folder if it doesn't exist
+    if not os.path.exists(path):
+        os.makedirs(path)
     folder = str(run_type) + '_results_' + time.strftime("%Y%m%d%H%M%S")
-    new_folder_path = os.path.join(output_folder_path, folder)
+    new_folder_path = os.path.join(path, folder)
     # Check if the "output" folder exists; if not, create it
     if not os.path.exists(output_folder_path):
         os.mkdir(output_folder_path)
