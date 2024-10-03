@@ -150,7 +150,7 @@ def make_plot(curves, ms, path, idx):
     ax2.tick_params(direction="in")    
     ax2.tick_params(axis='y', colors='red')   
     ax2.yaxis.label.set_color('red')
-    # ax2.set_ylim(3, 9)
+    ax2.set_ylim(3, 9)
     
     fig.tight_layout()   
     plt.savefig(path, dpi=300, bbox_inches='tight')  
