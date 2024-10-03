@@ -46,13 +46,21 @@ def create_model_structures(inputs):
                     conc_vol_data.append(column)
                 else:
                     conc_data.append(column)
-            
-            # convert volume data to time (s)
-            for column in conc_vol_data:
-                column = column * 1e-6 # convert from mL to m^3
-                time_col = convert_vol_to_time(column, ms) # must start at zero
+                    
+            # column by column transformations
+            for i in range(len(conc_vol_data)):
+                v_data = conc_vol_data[i] * 1e-6  # convert from mL to m^3
+                # trim off data before load starts and after elution ends
+                mask = (v_data >= 0) & (v_data <= ms['elution_vol'])
+                
+                # Use the mask to filter both v_data and conc_data in place
+                conc_vol_data[i] = v_data[mask]
+                conc_data[i] = conc_data[i][mask]
+                
+                # convert volume data to time (s)
+                time_col = convert_vol_to_time(conc_vol_data[i], ms)
                 conc_time_data.append(time_col)
-    
+
             # add concentration data to ms        
             model_structures[experiment]['conc_vol_data'] = np.array(conc_vol_data)
             model_structures[experiment]['conc_time_data'] = np.array(conc_time_data)
@@ -75,10 +83,15 @@ def create_model_structures(inputs):
             
             # shift back trace by column HUV                      
             inlet_H_vol_data = adjust_for_HUV(outlet_H_vol_data, ms)
+            
+            # trim off data before load starts and after elution ends
+            mask = (inlet_H_vol_data >= 0) & (inlet_H_vol_data <= ms['elution_vol'])
+            inlet_H_vol_data = inlet_H_vol_data[mask]
 
             H_time_data = convert_vol_to_time(inlet_H_vol_data, ms)
 
-            H_data = np.array(sheet_df.iloc[:, 1] )         
+            H_data = np.array(sheet_df.iloc[:, 1])   
+            H_data = H_data[mask]
 
             # add concentration data to ms        
             model_structures[experiment]['outlet_H_vol_data'] = np.array(outlet_H_vol_data)
@@ -107,10 +120,10 @@ def adjust_for_HUV(vol_data, ms):
 
 def convert_vol_to_time(vol_data, ms): 
     '''convert full chromatogram section by section'''
-    def convert_section(vol_data, flow_rate, v_start=0, t_start=0): 
+    def convert_section(vol_data, flow_rate, t_start=0): 
         '''for a constant flow rate section'''
         # first subtract v_start from volume data so it starts at 0
-        vol_data = vol_data - v_start
+        vol_data = vol_data - vol_data[0]
         # divide volume data by flow rate to get time 
         time_data = vol_data / flow_rate
         # add the start time back in
@@ -120,7 +133,7 @@ def convert_vol_to_time(vol_data, ms):
     # Create empty array for time
     time_data = []
 
-    section_vols = [0, ms['load_vol'], ms['wash_vol'], ms['elution_vol'], vol_data[-1]+1] # m^3
+    section_vols = [0, ms['load_vol'], ms['wash_vol'], ms['elution_vol']] # m^3
     section_times = [0, ms['load_time'], ms['wash_time'], ms['elution_time']] # m^3
     flow_rate  = ms['flow_rate'] # m^3/s
     
@@ -131,8 +144,11 @@ def convert_vol_to_time(vol_data, ms):
         t_start = section_times[idx]
         mask = (vol_data >= v_start) & (vol_data <= v_end)
         v_section = vol_data[mask]
-        t_section = convert_section(v_section, f, v_start=v_start, t_start=t_start)
-        time_data.extend(t_section)
+        if len(v_section) > 0:
+            t_section = convert_section(v_section, f, t_start=t_start)
+            time_data.extend(t_section)
+        else:
+            continue
         
     time_data = np.array(time_data)
     
