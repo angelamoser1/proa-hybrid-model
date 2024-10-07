@@ -9,9 +9,10 @@ Based on user input into the data_entry script, a list of model structures
 import numpy as np
 import pandas as pd
 import transport
+import make_outputs
 
 
-def create_model_structures(inputs):
+def create_model_structures(inputs, folder):
     # initialize list for all model structures            
     model_structures = []
         
@@ -21,7 +22,9 @@ def create_model_structures(inputs):
         ms = create_ms(inputs, experiment)
         # add ms for this experiment to the list of ms for all experiments        
         model_structures.append(ms)
-      
+        
+    # save model structure inputs in an excel file
+    make_outputs.make_excel([inputs], folder, 'model_inputs', orientation='cols')      
     
     # read in chromatogram data if provided
     if inputs.get('data_path') is not None:

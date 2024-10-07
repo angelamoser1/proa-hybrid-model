@@ -36,7 +36,7 @@ def get_inputs(profile='step'):
     inputs.load_pH = [7.4]
     inputs.wash_pH = [7.4]
     inputs.elution_pH = [3.5]
-    inputs.molecular_weights = [148]
+    inputs.molecular_weights = [[148,],]
     inputs.feed_conc = [[4.69,],]
     inputs.Ee = 0.4 #0.34
     inputs.Ep = 0.92
@@ -108,7 +108,7 @@ def get_inputs(profile='step'):
 
 def run_test(subprocess, profile, use_pH_dependence, folder):
     inputs = get_inputs(profile)
-    ms_list = create_model_structure.create_model_structures(inputs) 
+    ms_list = create_model_structure.create_model_structures(inputs, folder)
     
     if profile == 'simulated':
         for ms in ms_list:
@@ -193,7 +193,7 @@ def test_plot(curves, ms, subprocess, profile, use_pH_dependence, folder):
 
 ###############################################################################
 if __name__ == '__main__':     
-    folder = make_outputs.make_results_folder(os.path.join('output', 'test'), os.getcwd())
+    folder = make_outputs.make_results_folder(os.path.join('test'), os.getcwd())
     
     # run BTC tests
     run_test('BTC', 'step', False, folder)

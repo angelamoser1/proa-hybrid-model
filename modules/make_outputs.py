@@ -12,14 +12,22 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
-def dict_to_df(data):
+def unpack_dicts(data, parent_key='', sep='_'):
+    items = {}
     for key, value in data.items():
-        if hasattr(data[key], '__iter__'):
-            pass
+        new_key = f"{parent_key}{sep}{key}" if parent_key else key
+        if isinstance(value, dict):
+            items.update(unpack_dicts(value, new_key, sep=sep))
         else:
-            data[key] = [data[key]]
-    df = pd.DataFrame.from_dict(data)
-    df = df.apply(pd.to_numeric, errors ='ignore')
+            items[new_key] = [value]  # Wrap non-iterables in a list
+    return items
+
+
+def dict_to_df(data):
+    unpacked_data = unpack_dicts(data)   
+    # Create a DataFrame from the unpacked dictionary
+    df = pd.DataFrame.from_dict(unpacked_data, orient='index').reset_index()
+    df.columns = ['Key', 'Value']   
     return df
 
 
@@ -53,7 +61,7 @@ def format_multicomponent(sim_solutions):
     
 
 def make_results_folder(run_type, output_folder_path):
-    path = os.path.join(output_folder_path, 'outputs')
+    path = os.path.join(output_folder_path, 'output')
     # Create the output folder if it doesn't exist
     if not os.path.exists(path):
         os.makedirs(path)
@@ -84,7 +92,7 @@ def make_excels(all_results, sim_solutions, folder):
     make_excel(all_results, folder, 'results', orientation='rows')
     # Create excel with simulation curves for each experiment in a sheet
     sim_solutions = format_multicomponent(sim_solutions)
-    make_excel(sim_solutions, folder, 'curves')
+    make_excel(sim_solutions, folder, 'curves', orientation='cols')
     
     
 def convert_time_to_CV(time_data, ms):
