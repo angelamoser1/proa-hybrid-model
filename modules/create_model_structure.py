@@ -31,7 +31,8 @@ def create_model_structures(inputs):
         chromatogram_data = pd.read_excel(file, sheet_name=None)
                  
         # loop over experiments (excel sheets)
-        for experiment, sheet_data in enumerate(chromatogram_data.items()):  
+        for experiment, sheet_data in enumerate(chromatogram_data.items()):
+            ms = model_structures[experiment]
             # Unpack the tuple
             _, sheet_df = sheet_data
 
@@ -46,7 +47,8 @@ def create_model_structures(inputs):
                     conc_vol_data.append(column)
                 else:
                     conc_data.append(column)
-                    
+            
+            conc_data_mM = [[0 for _ in row] for row in conc_data]
             # column by column transformations
             for i in range(len(conc_vol_data)):
                 v_data = conc_vol_data[i] * 1e-6  # convert from mL to m^3
@@ -57,14 +59,18 @@ def create_model_structures(inputs):
                 conc_vol_data[i] = v_data[mask]
                 conc_data[i] = conc_data[i][mask]
                 
+                # convert to mM
+                conc_data_mM[i] = conc_data[i]/ms['molecular_weights'][i]
+
                 # convert volume data to time (s)
                 time_col = convert_vol_to_time(conc_vol_data[i], ms)
                 conc_time_data.append(time_col)
 
             # add concentration data to ms        
-            model_structures[experiment]['conc_vol_data'] = np.array(conc_vol_data)
-            model_structures[experiment]['conc_time_data'] = np.array(conc_time_data)
-            model_structures[experiment]['conc_data'] = np.array(conc_data)
+            ms['conc_vol_data'] = np.array(conc_vol_data)
+            ms['conc_time_data'] = np.array(conc_time_data)
+            ms['conc_data'] = np.array(conc_data)
+            ms['conc_data_mM'] = np.array(conc_data_mM)
 
     # read in [H+] profile data if provided        
     if inputs.get('profile_path') is not None:
@@ -74,7 +80,8 @@ def create_model_structures(inputs):
         H_data = pd.read_excel(file, sheet_name=None, usecols=[0, 1])
         
         # loop over experiments (excel sheets)
-        for experiment, sheet_data in enumerate(H_data.items()):   
+        for experiment, sheet_data in enumerate(H_data.items()): 
+            ms = model_structures[experiment]
             # Unpack the tuple
             _, sheet_df = sheet_data
 
@@ -94,10 +101,10 @@ def create_model_structures(inputs):
             H_data = H_data[mask]
 
             # add concentration data to ms        
-            model_structures[experiment]['outlet_H_vol_data'] = np.array(outlet_H_vol_data)
-            model_structures[experiment]['inlet_H_vol_data'] = np.array(inlet_H_vol_data)
-            model_structures[experiment]['H_time_data'] = np.array(H_time_data)
-            model_structures[experiment]['H_data'] = np.array(H_data)
+            ms['outlet_H_vol_data'] = np.array(outlet_H_vol_data)
+            ms['inlet_H_vol_data'] = np.array(inlet_H_vol_data)
+            ms['H_time_data'] = np.array(H_time_data)
+            ms['H_data'] = np.array(H_data)
                      
     return model_structures
 
@@ -170,7 +177,8 @@ def select_experiment(inputs, experiment):
     # for inputs that can be different for each experiment
     # select only the values for the given experiment
        
-    exp['feed_conc_mg'] = inputs['feed_conc'][experiment]        
+    exp['feed_conc_mg'] = inputs['feed_conc'][experiment]
+    exp['molecular_weights'] = inputs['molecular_weights'][experiment]     
     exp['feed_conc_mM'] = [c_mg / MW_comp for c_mg, MW_comp in zip(exp['feed_conc_mg'], exp['molecular_weights'])]
      
     exp['load_pH'] = inputs['load_pH'][experiment]
@@ -261,7 +269,7 @@ def create_ms(inputs, experiment):
     # Combine all molecular weights in list for further calculations     
     MW_H = 0.019 # [kDa], molecular weight of H3O+
     ms['MW'] = [MW_H] + ms['molecular_weights']
-   
+
     ms = transport.calculate_transport(ms)
     
     # set defaults. These can be overridden by user input.
