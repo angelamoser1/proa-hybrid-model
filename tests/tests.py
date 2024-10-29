@@ -122,14 +122,19 @@ def run_test(subprocess, profile, use_pH_dependence, folder):
             titration.plot_titration(ms, folder)
             # titration.make_excel(ms, folder)
             
-    for ms in ms_list:    
-        sim_solution = CADET_Process_configuration.run(ms, subprocess=subprocess, profile=profile,
-                                                       use_pH_dependence=use_pH_dependence,
-                                                    )
-        
-        simulation_curves = evaluate_sim.process_simulation_data(sim_solution, ms)
-        results = evaluate_sim.evaluate_simulation(simulation_curves, ms) 
-        
+    # all_curves = []
+    # all_results = []
+
+    all_solutions = CADET_Process_configuration.run(ms_list, subprocess=subprocess, profile=profile,
+                                                   use_pH_dependence=use_pH_dependence,
+                                                )
+    for exp in range(len(ms_list)):
+        sln = all_solutions[exp]
+        ms = ms_list[exp]
+        simulation_curves = evaluate_sim.process_simulation_data(sln, ms)
+        # results = evaluate_sim.evaluate_simulation(simulation_curves, ms)
+        # all_curves.append(simulation_curves)
+        # all_results.append(results)
         test_plot(simulation_curves, ms, subprocess, profile, use_pH_dependence, folder)
     
 
