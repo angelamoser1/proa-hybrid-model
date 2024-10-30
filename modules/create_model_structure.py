@@ -281,7 +281,7 @@ def create_ms(inputs, experiment):
         ms['coord_num'] = 6 # [-], Coordination number (hexagonal lattice)
     
     if ms.get('kappa') is None:
-        ms['kappa'] = 4 # [nm], Debye parameter
+        ms['kappa'] = 4e-9 # [m], Debye parameter
         
     if ms.get('k_kin_colloidal') is None:
         ms['k_kin_colloidal'] = 1e8 # [1/s] Kinetic rate constant for colloidal isotherm    
